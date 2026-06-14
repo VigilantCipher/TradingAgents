@@ -38,6 +38,28 @@ def get_language_instruction() -> str:
 
 def build_instrument_context(ticker: str) -> str:
     """Describe the exact instrument so agents preserve exchange-qualified tickers."""
+    from tradingagents.dataflows.crypto_symbols import is_crypto
+    from tradingagents.dataflows.commodity_symbols import is_commodity
+
+    if is_commodity(ticker):
+        return (
+            f"The instrument to analyze is `{ticker}`, a COMMODITY/FUTURES contract (trades nearly "
+            f"24h on exchange hours, no company behind it). Use this exact symbol in every tool "
+            f"call, report, and recommendation. Futures have no financial statements — assess via "
+            f"CFTC Commitments-of-Traders positioning (large speculators vs commercials), macro "
+            f"drivers (US dollar & real yields), supply/inventories (EIA for energy), the futures "
+            f"term structure, and technical structure."
+        )
+
+    if is_crypto(ticker):
+        return (
+            f"The instrument to analyze is `{ticker}`, a CRYPTO asset (trades 24/7, no exchange "
+            f"close or earnings calendar). Use this exact symbol in every tool call, report, and "
+            f"recommendation. Crypto has no company financial statements (no balance sheet, income "
+            f"statement, or insider filings) — assess it via tokenomics & supply, on-chain network "
+            f"activity, derivatives positioning (funding rate, open interest, long/short), liquidity, "
+            f"and technical structure."
+        )
     return (
         f"The instrument to analyze is `{ticker}`. "
         "Use this exact ticker in every tool call, report, and recommendation, "

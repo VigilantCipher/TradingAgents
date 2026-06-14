@@ -5,12 +5,18 @@ import pandas as pd
 import yfinance as yf
 import os
 from .stockstats_utils import StockstatsUtils, _clean_dataframe, yf_retry, load_ohlcv, filter_financials_by_date
+from .crypto_symbols import is_crypto
 
 def get_YFin_data_online(
     symbol: Annotated[str, "ticker symbol of the company"],
     start_date: Annotated[str, "Start date in yyyy-mm-dd format"],
     end_date: Annotated[str, "End date in yyyy-mm-dd format"],
 ):
+    # Crypto routes to OKX (24/7) with a yfinance BASE-USD fallback; the CSV
+    # shape is identical so the market analyst handles both transparently.
+    if is_crypto(symbol):
+        from .crypto_data import get_crypto_ohlcv_csv
+        return get_crypto_ohlcv_csv(symbol, start_date, end_date)
 
     datetime.strptime(start_date, "%Y-%m-%d")
     datetime.strptime(end_date, "%Y-%m-%d")

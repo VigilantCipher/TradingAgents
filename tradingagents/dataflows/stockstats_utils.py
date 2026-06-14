@@ -9,6 +9,7 @@ from typing import Annotated
 import os
 from .config import get_config
 from .utils import safe_ticker_component
+from .crypto_symbols import is_crypto
 
 logger = logging.getLogger(__name__)
 
@@ -74,15 +75,20 @@ def load_ohlcv(symbol: str, curr_date: str) -> pd.DataFrame:
     if os.path.exists(data_file):
         data = pd.read_csv(data_file, on_bad_lines="skip", encoding="utf-8")
     else:
-        data = yf_retry(lambda: yf.download(
-            symbol,
-            start=start_str,
-            end=end_str,
-            multi_level_index=False,
-            progress=False,
-            auto_adjust=True,
-        ))
-        data = data.reset_index()
+        if is_crypto(symbol):
+            # OKX (24/7) → yfinance fallback; already returns a Date/OHLCV frame.
+            from .crypto_data import fetch_crypto_ohlcv_df
+            data = fetch_crypto_ohlcv_df(symbol)
+        else:
+            data = yf_retry(lambda: yf.download(
+                symbol,
+                start=start_str,
+                end=end_str,
+                multi_level_index=False,
+                progress=False,
+                auto_adjust=True,
+            ))
+            data = data.reset_index()
         data.to_csv(data_file, index=False, encoding="utf-8")
 
     data = _clean_dataframe(data)

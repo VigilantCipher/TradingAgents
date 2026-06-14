@@ -3,11 +3,23 @@ from .utils.agent_states import AgentState, InvestDebateState, RiskDebateState
 
 from .analysts.fundamentals_analyst import create_fundamentals_analyst
 from .analysts.market_analyst import create_market_analyst
+from .analysts.ml_analyst import create_ml_analyst
 from .analysts.news_analyst import create_news_analyst
 from .analysts.sentiment_analyst import (
     create_sentiment_analyst,
     create_social_media_analyst,  # deprecated alias kept for back-compat
 )
+# Crypto-native analyst variants (selected when asset_class == "crypto").
+from .analysts.crypto_fundamentals_analyst import create_crypto_fundamentals_analyst
+from .analysts.crypto_news_analyst import create_crypto_news_analyst
+from .analysts.crypto_sentiment_analyst import create_crypto_sentiment_analyst
+# Commodity/futures analyst variants (selected when asset_class == "commodity").
+from .analysts.commodity_fundamentals_analyst import create_commodity_fundamentals_analyst
+from .analysts.commodity_news_analyst import create_commodity_news_analyst
+from .analysts.commodity_sentiment_analyst import create_commodity_sentiment_analyst
+# Predictive layers (default-on, asset-agnostic).
+from .analysts.forecast_analyst import create_forecast_analyst
+from .analysts.scenario_analyst import create_scenario_analyst
 
 from .researchers.bear_researcher import create_bear_researcher
 from .researchers.bull_researcher import create_bull_researcher
@@ -30,7 +42,16 @@ __all__ = [
     "create_bull_researcher",
     "create_research_manager",
     "create_fundamentals_analyst",
+    "create_crypto_fundamentals_analyst",
+    "create_crypto_news_analyst",
+    "create_crypto_sentiment_analyst",
+    "create_commodity_fundamentals_analyst",
+    "create_commodity_news_analyst",
+    "create_commodity_sentiment_analyst",
+    "create_forecast_analyst",
+    "create_scenario_analyst",
     "create_market_analyst",
+    "create_ml_analyst",
     "create_neutral_debator",
     "create_news_analyst",
     "create_aggressive_debator",

@@ -7,10 +7,11 @@ from typing import Annotated
 
 SavePathType = Annotated[str, "File path to save data. If None, data is not saved."]
 
-# Tickers can contain letters, digits, dot, dash, underscore, and caret
-# (for index symbols like ^GSPC). Anything else is rejected so the value
-# never escapes a containing directory when interpolated into a path.
-_TICKER_PATH_RE = re.compile(r"^[A-Za-z0-9._\-\^]+$")
+# Tickers can contain letters, digits, dot, dash, underscore, caret (index
+# symbols like ^GSPC), and equals (continuous-future symbols like GC=F). None
+# of these enable path traversal; anything else is rejected so the value never
+# escapes a containing directory when interpolated into a path.
+_TICKER_PATH_RE = re.compile(r"^[A-Za-z0-9._\-\^=]+$")
 
 
 def safe_ticker_component(value: str, *, max_len: int = 32) -> str:

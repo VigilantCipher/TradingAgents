@@ -70,6 +70,10 @@ DEFAULT_CONFIG = _apply_env_overrides({
     # Output language for analyst reports and final decision
     # Internal agent debate stays in English for reasoning quality
     "output_language": "English",
+    # ML signal service URL (cortex-mlsignal). Used by create_ml_analyst().
+    # Set analysts=["ml", ...] to route technical analysis through ML signals
+    # instead of the Nemotron-powered market analyst.
+    "mlsignal_url": os.getenv("MLSIGNAL_URL", "http://cortex-mlsignal:8095"),
     # Debate and discussion settings
     "max_debate_rounds": 1,
     "max_risk_discuss_rounds": 1,
@@ -89,6 +93,10 @@ DEFAULT_CONFIG = _apply_env_overrides({
         "ECB Bank of England BOJ central bank policy",
         "oil commodities supply chain energy",
     ],
+    # Asset class for the current run: "equity" (default) or "crypto". The HTTP
+    # server sets this per-request from is_crypto(); graph setup reads it to pick
+    # the crypto-native analysts, and the data layer routes OHLCV to OKX.
+    "asset_class": "equity",
     # Data vendor configuration
     # Category-level configuration (default for all tools in category)
     "data_vendors": {

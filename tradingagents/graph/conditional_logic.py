@@ -43,6 +43,22 @@ class ConditionalLogic:
             return "tools_fundamentals"
         return "Msg Clear Fundamentals"
 
+    def should_continue_forecast(self, state: AgentState):
+        """Forecast analyst is pre-fetch (no tool calls) — route straight to clear."""
+        messages = state["messages"]
+        last_message = messages[-1]
+        if last_message.tool_calls:
+            return "tools_forecast"
+        return "Msg Clear Forecast"
+
+    def should_continue_scenario(self, state: AgentState):
+        """Scenario analyst is pre-fetch (no tool calls) — route straight to clear."""
+        messages = state["messages"]
+        last_message = messages[-1]
+        if last_message.tool_calls:
+            return "tools_scenario"
+        return "Msg Clear Scenario"
+
     def should_continue_debate(self, state: AgentState) -> str:
         """Determine if debate should continue."""
 

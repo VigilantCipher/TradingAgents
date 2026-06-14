@@ -155,39 +155,47 @@ class TradingAgentsGraph:
         return kwargs
 
     def _create_tool_nodes(self) -> Dict[str, ToolNode]:
-        """Create tool nodes for different data sources using abstract methods."""
+        """Create tool nodes for different data sources using abstract methods.
+
+        For crypto runs the fundamentals/news tool nodes are built from the
+        crypto-native tools (tokenomics/derivatives/on-chain, crypto news). The
+        market node is shared (OHLCV/indicators route to OKX via the data layer)
+        and the social node is unused by the pre-fetch sentiment analysts.
+        """
+        asset_class = self.config.get("asset_class")
+        if asset_class == "crypto":
+            from tradingagents.agents.utils.crypto_data_tools import (
+                get_crypto_derivatives,
+                get_crypto_fundamentals,
+                get_crypto_news,
+                get_crypto_onchain,
+            )
+            fundamentals_tools = [get_crypto_fundamentals, get_crypto_derivatives, get_crypto_onchain]
+            news_tools = [get_crypto_news, get_global_news]
+        elif asset_class == "commodity":
+            from tradingagents.agents.utils.commodity_data_tools import (
+                get_commodity_cot,
+                get_commodity_macro,
+                get_commodity_supply,
+            )
+            fundamentals_tools = [get_commodity_cot, get_commodity_macro, get_commodity_supply]
+            news_tools = [get_news, get_global_news]
+        else:
+            fundamentals_tools = [get_fundamentals, get_balance_sheet, get_cashflow, get_income_statement]
+            news_tools = [get_news, get_global_news, get_insider_transactions]
+
+        # Forecast/scenario analysts are pre-fetch (no tool calls); their tool
+        # nodes exist only to satisfy the generic graph wiring.
+        from tradingagents.agents.utils.forecast_tools import get_kronos_forecast
+        from tradingagents.agents.utils.scenario_tools import get_scenario_simulation
+
         return {
-            "market": ToolNode(
-                [
-                    # Core stock data tools
-                    get_stock_data,
-                    # Technical indicators
-                    get_indicators,
-                ]
-            ),
-            "social": ToolNode(
-                [
-                    # News tools for social media analysis
-                    get_news,
-                ]
-            ),
-            "news": ToolNode(
-                [
-                    # News and insider information
-                    get_news,
-                    get_global_news,
-                    get_insider_transactions,
-                ]
-            ),
-            "fundamentals": ToolNode(
-                [
-                    # Fundamental analysis tools
-                    get_fundamentals,
-                    get_balance_sheet,
-                    get_cashflow,
-                    get_income_statement,
-                ]
-            ),
+            "market": ToolNode([get_stock_data, get_indicators]),
+            "social": ToolNode([get_news]),  # unused: sentiment analysts pre-fetch, no tool calls
+            "news": ToolNode(news_tools),
+            "fundamentals": ToolNode(fundamentals_tools),
+            "forecast": ToolNode([get_kronos_forecast]),
+            "scenario": ToolNode([get_scenario_simulation]),
         }
 
     def _resolve_benchmark(self, ticker: str) -> str:
@@ -204,6 +212,15 @@ class TradingAgentsGraph:
         explicit = self.config.get("benchmark_ticker")
         if explicit:
             return explicit
+        # Crypto is benchmarked against BTC (alts → alpha vs BTC; BTC → ~0 alpha
+        # vs itself). yfinance serves BTC-USD, so _fetch_returns resolves cleanly.
+        from tradingagents.dataflows.crypto_symbols import is_crypto
+        if is_crypto(ticker):
+            return "BTC-USD"
+        # Commodities/futures → DBC (broad commodity ETF) as the alpha baseline.
+        from tradingagents.dataflows.commodity_symbols import is_commodity
+        if is_commodity(ticker):
+            return "DBC"
         benchmark_map = self.config.get("benchmark_map", {})
         ticker_upper = ticker.upper()
         for suffix, benchmark in benchmark_map.items():

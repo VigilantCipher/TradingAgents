@@ -41,6 +41,14 @@ class GraphSetup:
         if len(selected_analysts) == 0:
             raise ValueError("Trading Agents Graph Setup Error: no analysts selected!")
 
+        # Crypto and commodity runs swap in asset-native analysts under the same
+        # selector keys (fundamentals/news/social) so all edges, conditional
+        # logic, and node names below are unchanged.
+        from tradingagents.dataflows.config import get_config
+        asset_class = get_config().get("asset_class")
+        is_crypto_run = asset_class == "crypto"
+        is_commodity_run = asset_class == "commodity"
+
         # Create analyst nodes
         analyst_nodes = {}
         delete_nodes = {}
@@ -53,30 +61,53 @@ class GraphSetup:
             delete_nodes["market"] = create_msg_delete()
             tool_nodes["market"] = self.tool_nodes["market"]
 
+        if "ml" in selected_analysts:
+            analyst_nodes["ml"] = create_ml_analyst(self.quick_thinking_llm)
+            delete_nodes["ml"] = create_msg_delete()
+            tool_nodes["ml"] = self.tool_nodes.get("ml", self.tool_nodes.get("market"))
+
         if "social" in selected_analysts:
             # "social" selector key preserved for back-compat with existing
             # user configs; the underlying agent has been renamed to
             # sentiment_analyst (the old name advertised social-media data
             # the agent never had access to — see issue #557).
-            analyst_nodes["social"] = create_sentiment_analyst(
-                self.quick_thinking_llm
-            )
+            if is_commodity_run:
+                analyst_nodes["social"] = create_commodity_sentiment_analyst(self.quick_thinking_llm)
+            elif is_crypto_run:
+                analyst_nodes["social"] = create_crypto_sentiment_analyst(self.quick_thinking_llm)
+            else:
+                analyst_nodes["social"] = create_sentiment_analyst(self.quick_thinking_llm)
             delete_nodes["social"] = create_msg_delete()
             tool_nodes["social"] = self.tool_nodes["social"]
 
         if "news" in selected_analysts:
-            analyst_nodes["news"] = create_news_analyst(
-                self.quick_thinking_llm
-            )
+            if is_commodity_run:
+                analyst_nodes["news"] = create_commodity_news_analyst(self.quick_thinking_llm)
+            elif is_crypto_run:
+                analyst_nodes["news"] = create_crypto_news_analyst(self.quick_thinking_llm)
+            else:
+                analyst_nodes["news"] = create_news_analyst(self.quick_thinking_llm)
             delete_nodes["news"] = create_msg_delete()
             tool_nodes["news"] = self.tool_nodes["news"]
 
         if "fundamentals" in selected_analysts:
-            analyst_nodes["fundamentals"] = create_fundamentals_analyst(
-                self.quick_thinking_llm
-            )
+            if is_commodity_run:
+                analyst_nodes["fundamentals"] = create_commodity_fundamentals_analyst(self.quick_thinking_llm)
+            elif is_crypto_run:
+                analyst_nodes["fundamentals"] = create_crypto_fundamentals_analyst(self.quick_thinking_llm)
+            else:
+                analyst_nodes["fundamentals"] = create_fundamentals_analyst(self.quick_thinking_llm)
             delete_nodes["fundamentals"] = create_msg_delete()
             tool_nodes["fundamentals"] = self.tool_nodes["fundamentals"]
+
+        # Kronos forecast runs in-committee (CPU, ~9s, no GPU contention) and is
+        # injected into the bull/bear debate. The MiroShark scenario is NOT a
+        # committee analyst — it runs as a post-committee stage (see server.py)
+        # so it never competes with the Nemotron committee for the GPU.
+        if "forecast" in selected_analysts:
+            analyst_nodes["forecast"] = create_forecast_analyst(self.quick_thinking_llm)
+            delete_nodes["forecast"] = create_msg_delete()
+            tool_nodes["forecast"] = self.tool_nodes["forecast"]
 
         # Create researcher and manager nodes
         bull_researcher_node = create_bull_researcher(self.quick_thinking_llm)

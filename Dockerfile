@@ -8,12 +8,15 @@ ENV PATH="/opt/venv/bin:$PATH"
 
 WORKDIR /build
 COPY . .
-RUN pip install --no-cache-dir .
+# Install package + uvicorn for the HTTP server
+RUN pip install --no-cache-dir . uvicorn[standard]
 
 FROM python:3.12-slim
 
 ENV PYTHONDONTWRITEBYTECODE=1 \
-    PYTHONUNBUFFERED=1
+    PYTHONUNBUFFERED=1 \
+    TRADINGAGENTS_BIND=0.0.0.0 \
+    TRADINGAGENTS_PORT=8090
 
 COPY --from=builder /opt/venv /opt/venv
 ENV PATH="/opt/venv/bin:$PATH"
@@ -25,4 +28,8 @@ WORKDIR /home/appuser/app
 
 COPY --from=builder --chown=appuser:appuser /build .
 
-ENTRYPOINT ["tradingagents"]
+EXPOSE 8090
+
+# Default: run the HTTP API server.
+# Override with `docker compose run tradingagents tradingagents` for the CLI.
+CMD ["python", "server.py"]

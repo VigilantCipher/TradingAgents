@@ -13,14 +13,25 @@ def create_market_analyst(llm):
     def market_analyst_node(state):
         current_date = state["trade_date"]
         instrument_context = build_instrument_context(state["company_of_interest"])
+        tv_ctx = state.get("tv_signal_context", "")
 
         tools = [
             get_stock_data,
             get_indicators,
         ]
 
+        tv_prefix = ""
+        if tv_ctx:
+            tv_prefix = (
+                "AUTHORITATIVE TRADINGVIEW SIGNAL (CSL v2 — treat as canonical market structure):\n"
+                + tv_ctx
+                + "\n\nThe above values come directly from TradingView Pine execution and represent the ground-truth technical state. "
+                "Do not re-derive fib zones, Markov state, market regime, or entry/TP/SL from yfinance — use the TV values above as your baseline and focus your yfinance analysis on confirmation, context, and additional indicators not captured above.\n\n"
+            )
+
         system_message = (
-            """You are a trading assistant tasked with analyzing financial markets. Your role is to select the **most relevant indicators** for a given market condition or trading strategy from the following list. The goal is to choose up to **8 indicators** that provide complementary insights without redundancy. Categories and each category's indicators are:
+            tv_prefix
+            + """You are a trading assistant tasked with analyzing financial markets. Your role is to select the **most relevant indicators** for a given market condition or trading strategy from the following list. The goal is to choose up to **8 indicators** that provide complementary insights without redundancy. Categories and each category's indicators are:
 
 Moving Averages:
 - close_50_sma: 50 SMA: A medium-term trend indicator. Usage: Identify trend direction and serve as dynamic support/resistance. Tips: It lags price; combine with faster indicators for timely signals.

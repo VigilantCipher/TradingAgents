@@ -56,6 +56,8 @@ class AgentState(MessagesState):
         str, "Report from the News Researcher of current world affairs"
     ]
     fundamentals_report: Annotated[str, "Report from the Fundamentals Researcher"]
+    forecast_report: Annotated[str, "Report from the Forecast Analyst (Kronos price forecast)"]
+    scenario_report: Annotated[str, "Report from the Scenario Analyst (MiroShark simulation)"]
 
     # researcher team discussion step
     investment_debate_state: Annotated[
@@ -71,3 +73,4 @@ class AgentState(MessagesState):
     ]
     final_trade_decision: Annotated[str, "Final decision made by the Risk Analysts"]
     past_context: Annotated[str, "Memory log context injected at run start (same-ticker decisions + cross-ticker lessons)"]
+    tv_signal_context: Annotated[str, "Authoritative TradingView CSL v2 signal context injected at run start"]

@@ -37,7 +37,7 @@ def create_ml_analyst(_llm=None):
                 f"Proceed with other analyst reports."
             )
 
-        return {"market_report": report}
+        return {"ml_report": report}
 
     return ml_analyst_node
 

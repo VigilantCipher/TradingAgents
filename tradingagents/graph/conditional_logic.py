@@ -59,6 +59,11 @@ class ConditionalLogic:
             return "tools_scenario"
         return "Msg Clear Scenario"
 
+    def should_continue_ml(self, state: AgentState):
+        """ML analyst is deterministic (cortex-mlsignal HTTP fetch, no tool calls
+        and no LLM message) — always route straight to clear; never to tools."""
+        return "Msg Clear Ml"
+
     def should_continue_debate(self, state: AgentState) -> str:
         """Determine if debate should continue."""
 

@@ -170,7 +170,7 @@ class AnalyzeRequest(BaseModel):
     )
 
     analysts: list[str] = Field(
-        default=["market", "social", "news", "fundamentals", "forecast"],
+        default=["market", "ml", "social", "news", "fundamentals", "forecast"],
         description=(
             "In-committee analysts: market, social, news, fundamentals, forecast (Kronos price "
             "forecast, runs on CPU). Defaults to all. The MiroShark scenario runs separately as a "
